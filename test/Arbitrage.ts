@@ -9,7 +9,7 @@ describe("Arbitrage", function () {
     const arbitrage = await Arbitrage.deploy();
 
     const WETH = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-    const USDT = "0xaa95f26e30001251fb905d264aa7b00ee9df6c18";
+    const USDT = "0xdAC17F958D2ee523a2206206994597C13D831ec7";
     const USDC = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 
     const wethContract = await ethers.getContractAt("IERC20", WETH);
@@ -39,16 +39,16 @@ describe("Arbitrage", function () {
       const balance = await wethContract.balanceOf(await arbitrage.getAddress());
       console.log("WETH balance of our smart contract before swap is:", balance.toString());
 
-      const token = "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0";
-      const flashAmount = ethers.parseEther("1");
+      const token = "0x5c147e74D63B1D31AA3Fd78Eb229B65161983B2b";
+      const flashAmount = ethers.parseEther("2");
       const path = [WETH, token, WETH];
-      const v3Fee = 3000; // 0.3% fee tier for Uniswap V3
+      const v3Fee = 10000; // 0.3% fee tier for Uniswap V3
       const exchRoute = [0, 1]; // Uniswap V3, Uniswap V2, SushiSwap V2
       
       // You'll need to provide actual pool addresses for each swap
       const pools = [
-        "0x819f3450da6f110ba6ea52195b3beafa246062de",
-        "0x290a6a7460b308ee3f19023d2d00de604bcf5b42" // WETH/USDT Uniswap V3 pool
+        "0x5a70513ec742ebbfb99094c7fd3096a0a3e25b86", // WETH/USDT Uniswap V3 pool
+        "0x7316b2515940a8573e34f45900e82763ad34a34a",
         // "0x3041CbD36888bECc7bbCBc0045E3B1f144466f5f" // USDC/USDT SushiSwap pair
         // "0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc"  // USDC/WETH Uniswap v2 pair
       ];
