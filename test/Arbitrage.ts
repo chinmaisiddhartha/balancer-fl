@@ -39,21 +39,20 @@ describe("Arbitrage", function () {
       const balance = await wethContract.balanceOf(await arbitrage.getAddress());
       console.log("WETH balance of our smart contract before swap is:", balance.toString());
 
-      const token = "0x5c147e74D63B1D31AA3Fd78Eb229B65161983B2b";
-      const flashAmount = ethers.parseEther("2");
+      const token = "0xD29DA236dd4AAc627346e1bBa06A619E8c22d7C5";
+      const flashAmount = ethers.parseEther("1");
       const path = [WETH, token, WETH];
-      const v3Fee = 10000; // 0.3% fee tier for Uniswap V3
       const exchRoute = [0, 1]; // Uniswap V3, Uniswap V2, SushiSwap V2
       
       // You'll need to provide actual pool addresses for each swap
       const pools = [
-        "0x5a70513ec742ebbfb99094c7fd3096a0a3e25b86", // WETH/USDT Uniswap V3 pool
-        "0x7316b2515940a8573e34f45900e82763ad34a34a",
+          "0x0c3fdf9c70835f9be9db9585ecb6a1ee3f20a6c7",
+        "0x961ec3bb28c9e98a040c4bded38917aa96b791be", // WETH/USDT Uniswap V3 pool
         // "0x3041CbD36888bECc7bbCBc0045E3B1f144466f5f" // USDC/USDT SushiSwap pair
         // "0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc"  // USDC/WETH Uniswap v2 pair
       ];
 
-      const tx = await arbitrage.connect(owner).getFlashloan(WETH, flashAmount, path, v3Fee, exchRoute, pools);
+      const tx = await arbitrage.connect(owner).getFlashloan(WETH, flashAmount, path, exchRoute, pools);
       const receipt = await tx.wait();
       expect(receipt?.status).to.equal(1);
       console.log("Arbitrage transaction:", tx);

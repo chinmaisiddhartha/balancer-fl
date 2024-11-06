@@ -69,9 +69,11 @@ contract Arbitrage is IFlashLoanRecipient {
     IVault public constant vault =
         IVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
 
-    uint160 internal constant MIN_SQRT_RATIO = 4295128739;
-    uint160 internal constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
+    // uint160 internal constant MIN_SQRT_RATIO = 4295128739;
+    // uint160 internal constant MAX_SQRT_RATIO = 1461446703485210103287273052203988822378723970342;
 
+    address immutable owner;
+    
     enum Exchange {
         V2,
         V3
@@ -82,7 +84,6 @@ contract Arbitrage is IFlashLoanRecipient {
         uint256 flashAmount;
         address caller;
         address[] path;
-        uint24 v3Fee;
         uint8[] exchRoute;
         address[] pools;
         uint256 balanceBefore;
@@ -91,7 +92,9 @@ contract Arbitrage is IFlashLoanRecipient {
     event FlashLoan(address token, uint256 amount);
     event SwapExecuted(uint8 exchange, uint256 amountIn, uint256 amountOut);
 
-    constructor() payable {}
+    constructor() payable {
+        owner = msg.sender;
+    }
     
     receive() external payable {}
 
@@ -99,7 +102,6 @@ contract Arbitrage is IFlashLoanRecipient {
         address flashToken,
         uint256 flashAmount,
         address[] memory path,
-        uint24 v3Fee,
         uint8[] memory exchRoute,
         address[] memory pools
     ) external {
@@ -111,7 +113,6 @@ contract Arbitrage is IFlashLoanRecipient {
             flashAmount: flashAmount,
             caller: msg.sender,
             path: path,
-            v3Fee: v3Fee,
             exchRoute: exchRoute,
             pools: pools,
             balanceBefore: balanceBefore
@@ -141,15 +142,17 @@ contract Arbitrage is IFlashLoanRecipient {
         console.log("FlashLoan received: ", balanceAfter);
 
         require(
-            balanceAfter - decoded.balanceBefore == amounts[0],
-            "FlashLoanTemplate: Contract did not get loan"
+            balanceAfter - decoded.balanceBefore >= amounts[0],
+            "Arbitrage: Contract did not get loan"
         );
 
         uint256 profit = executeArbitrage(decoded, amounts[0]);
 
-        IERC20(decoded.flashToken).transfer(address(vault), amounts[0] + feeAmounts[0]);
+        bool success = IERC20(decoded.flashToken).transfer(address(vault), amounts[0] + feeAmounts[0]);
+        require(success, "Arbitrage: Transfer to Vault failed");
         if (profit > 0) {
-            IERC20(decoded.flashToken).transfer(decoded.caller, profit);
+            success = IERC20(decoded.flashToken).transfer(decoded.caller, profit);
+            require(success, "Arbitrage: Profit Transfer to caller failed");
         }
 
         emit FlashLoan(decoded.flashToken, amounts[0]);
@@ -162,7 +165,7 @@ contract Arbitrage is IFlashLoanRecipient {
     
         for (uint i = 0; i < userData.exchRoute.length; i++) {
             console.log("Executing arbitrage on exchange: ", userData.exchRoute[i]);
-            (uint256 amountOut, address tokenOut) = PlaceSwap(userData.path, currentAmount, userData.exchRoute[i], userData.v3Fee, i, userData.pools[i]);
+            (uint256 amountOut, address tokenOut) = placeSwap(userData.path, currentAmount, userData.exchRoute[i], i, userData.pools[i]);
             console.log("Swap completed. Amount in: ", currentAmount, " Amount out: ", amountOut);
             currentAmount = amountOut;
             currentToken = tokenOut;
@@ -180,7 +183,7 @@ contract Arbitrage is IFlashLoanRecipient {
     }
     
     
-    function PlaceSwap(address[] memory _tokenPath, uint256 _amountIn, uint8 _route, uint24 _v3Fee, uint256 swapIndex, address pool) private returns(uint256, address) {
+    function placeSwap(address[] memory _tokenPath, uint256 _amountIn, uint8 _route, uint256 swapIndex, address pool) private returns(uint256, address) {
         console.log("Placing swap on exchange: ", _route);
         uint256 amountOut;
         address tokenOut;
@@ -189,9 +192,6 @@ contract Arbitrage is IFlashLoanRecipient {
         path[0] = _tokenPath[swapIndex];
         path[1] = _tokenPath[swapIndex + 1];
 
-        console.log("pool address for swap: ", pool, "swapIndex: ", swapIndex);
-        console.log("path0: ", path[0]);
-        console.log("path1: ", path[1]);
         // console.log("approving pool to spend tokens");
         // IERC20(path[0]).approve(pool, _amountIn);
         // console.log(" approval done ..!!");
@@ -201,7 +201,13 @@ contract Arbitrage is IFlashLoanRecipient {
       
 
         if (_route == uint8(Exchange.V2)) {
-            uint256[] memory amounts = swapExactTokensForTokens(pool, _amountIn, 0, path, address(this));
+            (uint112 reserve0, uint112 reserve1,) = IUniswapV2Pair(pool).getReserves();
+            bool isInput0 = path[0] < path[1];
+            uint256 _amountOut = getAmountOut(_amountIn, isInput0 ? reserve0 : reserve1, isInput0 ? reserve1 : reserve0);
+            console.log("expected amountOut:", _amountOut);
+            uint256 amountOutMin = (_amountOut * 9975) / 10000;
+            console.log("amountOutMin:", amountOutMin);
+            uint256[] memory amounts = swapExactTokensForTokens(pool, _amountIn, amountOutMin, path, address(this));
             amountOut = amounts[1];
             tokenOut = path[1];
         } else {
@@ -226,17 +232,12 @@ contract Arbitrage is IFlashLoanRecipient {
         address to
     ) private returns (uint256[] memory amounts) {
         require(path.length == 2, "Invalid path");
-        console.log("V2 Swap - Pair address:", pair);
-        console.log("V2 Swap - Amount In:", amountIn);
         console.log("V2 Swap - Path:", path[0], path[1]);
     
         IUniswapV2Pair uniswapV2Pair = IUniswapV2Pair(pair);
-        (uint112 reserve0, uint112 reserve1,) = uniswapV2Pair.getReserves();
-        console.log("V2 Swap - Reserves:", reserve0, reserve1);
-        
+        (uint112 reserve0, uint112 reserve1,) = uniswapV2Pair.getReserves();        
         bool isInput0 = path[0] < path[1];
         uint256 amountOut = getAmountOut(amountIn, isInput0 ? reserve0 : reserve1, isInput0 ? reserve1 : reserve0);
-        console.log("V2 Swap - Calculated Amount Out:", amountOut);
         require(amountOut >= amountOutMin, "Insufficient output amount");
         
         console.log("path0 contract balance is : ", IERC20(path[0]).balanceOf(address(this)));
@@ -250,26 +251,7 @@ contract Arbitrage is IFlashLoanRecipient {
         uint256 allowance = IERC20(path[0]).allowance(address(this), pair);
         console.log("V2 Swap - Approval allowance:", allowance);
         require(allowance >= amountIn, "Insufficient allowance");
-
-        console.log("checking both token balances in smart contract");
-
-        console.log("");
-        console.log("V2 Swap - Transferring tokens to pair address...");
         TransferHelper.safeTransfer(path[0], pair, amountIn);
-        console.log("Transfer successful");
-        console.log(
-            "V2 Swap - Token balance after transfer:",
-            IERC20(path[0]).balanceOf(address(this))
-        );
-        // try IERC20(path[0]).transfer(pair, amountIn) {
-        //     console.log("V2 Swap - Token transfer successful");
-        // } catch Error(string memory reason) {
-        //     console.log("V2 Swap - Token transfer failed. Reason:", reason);
-        //     revert(reason);
-        // } catch (bytes memory lowLevelData) {
-        //     console.log("V2 Swap - Token transfer failed. Low-level error");
-        //     revert("Low-level transfer error");
-        // }
     
         amounts = new uint256[](2);
         amounts[0] = amountIn;
@@ -281,8 +263,6 @@ contract Arbitrage is IFlashLoanRecipient {
             to,
             new bytes(0)
         );
-        
-        
         console.log("V2 Swap - Actual Amount In:", amounts[0]);
         console.log("V2 Swap - Actual Amount Out:", amounts[1]);
         
@@ -309,8 +289,8 @@ contract Arbitrage is IFlashLoanRecipient {
         console.log("V3 Swap - token1: ", pool.token1());
         (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
         uint160 sqrtPriceLimitX96 = zeroForOne 
-            ? sqrtPriceX96 * 99 / 100  // Price can go down by 1%
-            : sqrtPriceX96 * 101 / 100; // Price can go up by 1%
+            ? sqrtPriceX96 * 9975 / 10000  // Price can go down by 1%
+            : sqrtPriceX96 * 10025 / 10000; // Price can go up by 1%
 
         bytes memory callbackData = abi.encode(tokenIn, tokenOut, amountIn);
 
@@ -333,15 +313,16 @@ contract Arbitrage is IFlashLoanRecipient {
         bytes calldata data
     ) external {
         require(msg.sender == address(IUniswapV3Pool(msg.sender)), "Unauthorized callback");
-        console.log("Authorized callback msg.sender : ", address(IUniswapV3Pool(msg.sender)));
-        console.log("noramal msg.sender v3 call back top line is : ", msg.sender);
+        // console.log("Authorized callback msg.sender : ", address(IUniswapV3Pool(msg.sender)));
+        // console.log("noramal msg.sender v3 call back top line is : ", msg.sender);
         (address tokenIn, address tokenOut, uint256 amountIn) = abi.decode(data, (address, address, uint256));
     
         uint256 amountToPay = amount0Delta > 0 ? uint256(amount0Delta) : uint256(amount1Delta);
         require(amountToPay <= amountIn, "Insufficient input amount");
     
-        IERC20(tokenIn).transfer(msg.sender, amountToPay);
-        console.log("last msg.sender in callback: ", msg.sender);
+        bool success = IERC20(tokenIn).transfer(msg.sender, amountToPay);
+        require(success, "Callback Transfer failed");
+        // console.log("last msg.sender in callback: ", msg.sender);
     }
     
 
@@ -352,5 +333,21 @@ contract Arbitrage is IFlashLoanRecipient {
         uint256 numerator = amountInWithFee * uint256(reserveOut);
         uint256 denominator = (uint256(reserveIn) * 1000) + amountInWithFee;
         amountOut = numerator / denominator;
+    }
+
+    function withdrawTokens(address token) public  {
+        require(msg.sender == owner, "Only the owner can withdraw");
+        uint256 balance = IERC20(token).balanceOf(address(this));
+        require(balance > 0, "No tokens to withdraw");
+        bool success = IERC20(token).transfer(msg.sender, balance);
+        require(success, "Token withdrawal failed");
+    }
+
+    function withdrawEth() public {
+        require(msg.sender == owner, "Only the owner can withdraw");
+        uint256 balance = address(this).balance;
+        require(balance > 0, "No ETH to withdraw");
+        (bool success, ) = msg.sender.call{value: balance}("");
+        require(success, "ETH withdrawal failed");
     }
 }
