@@ -103,7 +103,7 @@ function receiveFlashLoan(
 
     FlashLoanData memory decoded = abi.decode(userData, (FlashLoanData));
     uint256 balanceAfter = tokens[0].balanceOf(address(this));
-    console.log("FlashLoan received: ", balanceAfter);
+    console.log("FlashLoan received: ", amounts[0], "Balance after FL: ", balanceAfter);
 
     emit FlashLoanReceived(amounts[0], feeAmounts[0], balanceAfter);
 
@@ -134,7 +134,7 @@ function executeArbitrage(FlashLoanData memory userData, uint256 flashAmount) pr
     
     uint256 routeLength = userData.exchRoute.length;
     for (uint i = 0; i < routeLength; i++) {
-        // console.log("Executing arbitrage on exchange: ", userData.exchRoute[i]);
+        console.log("Executing arbitrage on exchange: ", userData.exchRoute[i]);
         (uint256 amountOut, address tokenOut) = placeSwap(userData.path, currentAmount, userData.exchRoute[i], i, userData.pools[i]);
         console.log("Swap completed. Amount in: ", currentAmount, " Amount out: ", amountOut);
         currentAmount = amountOut;
@@ -160,11 +160,13 @@ function placeSwap(address[] memory _tokenPath, uint256 _amountIn, uint8 _route,
     emit SwapStarted(_route, _amountIn, _tokenPath[swapIndex], _tokenPath[swapIndex + 1], pool);
    
     uint256 amountOut;
-    address tokenOut;
+    address tokenOut = _tokenPath[swapIndex + 1];
 
     address[] memory path = new address[](2);
     path[0] = _tokenPath[swapIndex];
     path[1] = _tokenPath[swapIndex + 1];
+
+    console.log("token Path is : ", path[0], " ", path[1]);
 
     bool isInput0 = path[0] < path[1];
 
@@ -177,16 +179,12 @@ function placeSwap(address[] memory _tokenPath, uint256 _amountIn, uint8 _route,
         uint256 minAmountOut = v2MinAmountOut(pool, _amountIn, isInput0);
         uint256[] memory amounts = swapV2(pool, _amountIn, minAmountOut, path, address(this));
         amountOut = amounts[1];
-        tokenOut = path[1];
     } else if (_route == uint8(Exchange.V3))  {
         amountOut = swapV3(pool, _amountIn, 0, path[0], address(this));
-        tokenOut = path[1];
     } else if (_route == uint8(Exchange.P3)) { 
         amountOut = swapP3(pool, _amountIn, 0, path[0], address(this));
-        tokenOut = path[1];
     } else if (_route == uint8(Exchange.CL)) {
         amountOut = swapCL(pool, _amountIn, 0, path[0], address(this));
-        tokenOut = path[1];
     }
     console.log("swap executed on exchange:", _route);
     console.log("tokenIn balance of smart contract after swap:",IERC20(path[0]).balanceOf(address(this)));

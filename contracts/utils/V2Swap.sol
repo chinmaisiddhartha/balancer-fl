@@ -19,7 +19,7 @@ contract V2Swap {
         (uint112 reserve0, uint112 reserve1,) = Pair.getReserves();        
         bool isInput0 = path[0] < path[1];
         uint256 amountOut = getAmountOut(amountIn, isInput0 ? reserve0 : reserve1, isInput0 ? reserve1 : reserve0);
-        require(amountOut >= amountOutMin, "Insufficient output amount");
+        require(amountOut >= amountOutMin, "Slipppage Limit exceeded");
         
         TransferHelper.safeApprove(path[0], pair, amountIn);
         uint256 allowance = IERC20(path[0]).allowance(address(this), pair);

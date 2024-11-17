@@ -1,0 +1,5 @@
+ArbitrageTest:testCallbackAuthentication() (gas: 27856)
+ArbitrageTest:testFlashLoanGasOptimization() (gas: 2916297)
+ArbitrageTest:testFlashLoanWithMultipleRoutes() (gas: 694063)
+ArbitrageTest:testMEVResistance() (gas: 13788)
+ArbitrageTest:testSlippageProtection() (gas: 222532)

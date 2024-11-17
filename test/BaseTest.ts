@@ -129,14 +129,14 @@ describe("Arbitrage on Base", function () {
       const balance = await wethContract.balanceOf(await arbitrage.getAddress());
       console.log("WETH balance of our smart contract before swap is:", balance.toString());
 
-      const token = "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA"; // cbETH on Base
+      const token = "0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed"; // cbETH on Base
       const flashAmount = ethers.parseEther("1");
-      const path = [WETH, token, WETH];
-      const exchRoute = [2, 0];
+      const path = [WETH, USDC, WETH];
+      const exchRoute = [0, 2];
       
       const pools = [
-        "0xf6c0a374a483101e04ef5f7ac9bd15d9142bac95",
-        "0x41d160033c222e6f3722ec97379867324567d883",
+        "0x88a43bbdf9d098eec7bceda4e2494615dfd9bb9c",
+        "0x72ab388e2e2f6facef59e3c3fa2c4e29011c2d38",
       ];
 
       try {
