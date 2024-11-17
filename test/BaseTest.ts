@@ -130,8 +130,8 @@ describe("Arbitrage on Base", function () {
       console.log("WETH balance of our smart contract before swap is:", balance.toString());
 
       const token = "0xd9aAEc86B65D86f6A7B5B1b0c42FFA531710b6CA"; // cbETH on Base
-      const flashAmount = ethers.parseUnits("1000", 6);
-      const path = [token, WETH, token];
+      const flashAmount = ethers.parseEther("1");
+      const path = [WETH, token, WETH];
       const exchRoute = [2, 0];
       
       const pools = [
@@ -141,7 +141,7 @@ describe("Arbitrage on Base", function () {
 
       try {
         const tx = await arbitrage.connect(owner).getFlashloan(
-          token, 
+          WETH, 
           flashAmount, 
           path, 
           exchRoute, 
@@ -152,7 +152,7 @@ describe("Arbitrage on Base", function () {
         const receipt = await tx.wait();
         console.log("\nTransaction successful!");
         
-        const events = receipt?.logs.map(log => {
+        const events = receipt?.logs.map((log: { topics: string[], data: string }) => {
           try {
             return arbitrage.interface.parseLog({
               topics: [...log.topics],
@@ -164,11 +164,10 @@ describe("Arbitrage on Base", function () {
         }).filter(Boolean);
 
         console.log("\nEvent Logs:");
-        events?.forEach(event => {
+        events?.forEach((event: any) => {
           console.log(`\nEvent: ${event?.name}`);
           console.log("Args:", event?.args);
-        });
-        
+        });        
       } catch (error: any) {
         console.log("\n🔥 Detailed Error Information:");
         console.log("Error Code:", error.code);

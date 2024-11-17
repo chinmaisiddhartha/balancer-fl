@@ -1,0 +1,1 @@
+{"abi":[],"bytecode":{"object":"0x","linkReferences":{}},"deployedBytecode":{"object":"0x","linkReferences":{}},"ast":{"absolutePath":"contracts/FlashLoan.sol","id":1047,"exportedSymbols":{},"nodeType":"SourceUnit","src":"39:7370:2","nodes":[{"id":1046,"nodeType":"PragmaDirective","src":"39:24:2","nodes":[],"literals":["solidity","^","0.8",".18"]}],"license":"UNLICENSED"},"id":2}

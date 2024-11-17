@@ -99,9 +99,10 @@ function receiveFlashLoan(
     bytes memory userData
 ) external override {
     require(msg.sender == address(vault), "FlashLoanTemplate: Caller not Balancer Vault");
+    require(tokens.length == 1, "Only single token flashloans supported");
 
     FlashLoanData memory decoded = abi.decode(userData, (FlashLoanData));
-    uint256 balanceAfter = IERC20(decoded.flashToken).balanceOf(address(this));
+    uint256 balanceAfter = tokens[0].balanceOf(address(this));
     console.log("FlashLoan received: ", balanceAfter);
 
     emit FlashLoanReceived(amounts[0], feeAmounts[0], balanceAfter);
@@ -199,17 +200,16 @@ function uniswapV3SwapCallback(
     int256 amount0Delta,
     int256 amount1Delta,
     bytes calldata data 
-    ) external override(CLSwap, V3Swap) {
+) external override(V3Swap, CLSwap){
     require(msg.sender == address(IUniswapV3Pool(msg.sender)), "Unauthorized callback");
     // console.log("Authorized callback msg.sender : ", address(IUniswapV3Pool(msg.sender)));
     // console.log("noramal msg.sender v3 call back top line is : ", msg.sender);
     (address tokenIn, address tokenOut, uint256 amountIn) = abi.decode(data, (address, address, uint256));
-
+    require(tokenOut != address(0), "Invalid token out");
     uint256 amountToPay = amount0Delta > 0 ? uint256(amount0Delta) : uint256(amount1Delta);
     require(amountToPay <= amountIn, "Insufficient input amount");
 
-    bool success = IERC20(tokenIn).transfer(msg.sender, amountToPay);
-    require(success, "Callback Transfer failed");
+    TransferHelper.safeTransfer(tokenIn, msg.sender, amountToPay);
     // console.log("last msg.sender in callback: ", msg.sender);
 }
 

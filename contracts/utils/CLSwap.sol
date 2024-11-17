@@ -20,9 +20,12 @@ contract CLSwap {
         address tokenOut = zeroForOne ? pool.token1() : pool.token0();
         (uint160 sqrtPriceX96, , , , , ) = pool.slot0();
 
+        // Safe version using checked math
         uint160 sqrtPriceLimitX96 = zeroForOne 
-        ? sqrtPriceX96 * 9975 / 10000  // Price can go down by 0.25%
-        : sqrtPriceX96 * 10025 / 10000; // Price can go up by 0.25%
+        ? uint160((uint256(sqrtPriceX96) * 9975) / 10000)
+        : uint160((uint256(sqrtPriceX96) * 10025) / 10000);
+        // Price can go up by 0.25%
+        // Price can go down by 0.25%
 
         bytes memory callbackData = abi.encode(tokenIn, tokenOut, amountIn);
 
@@ -48,12 +51,11 @@ contract CLSwap {
         // console.log("Authorized callback msg.sender : ", address(IUniswapV3Pool(msg.sender)));
         // console.log("noramal msg.sender v3 call back top line is : ", msg.sender);
         (address tokenIn, address tokenOut, uint256 amountIn) = abi.decode(data, (address, address, uint256));
-    
+        require(tokenOut != address(0), "Invalid token out");
         uint256 amountToPay = amount0Delta > 0 ? uint256(amount0Delta) : uint256(amount1Delta);
         require(amountToPay <= amountIn, "Insufficient input amount");
     
-        bool success = IERC20(tokenIn).transfer(msg.sender, amountToPay);
-        require(success, "Callback Transfer failed");
+        TransferHelper.safeTransfer(tokenIn, msg.sender, amountToPay);
         // console.log("last msg.sender in callback: ", msg.sender);
     }
 

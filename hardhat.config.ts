@@ -2,6 +2,7 @@ import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-ignition-ethers";
 import "@nomicfoundation/hardhat-ethers";
+import "@nomicfoundation/hardhat-foundry";
 import "hardhat-gas-reporter";
 import * as dotenv from "dotenv";
 
