@@ -71,7 +71,7 @@ const config: HardhatUserConfig = {
       forking: {
         // url: `https://site1.moralis-nodes.com/eth/${ETHEREUM_NODE_API_KEY}`,
         url: `https://site1.moralis-nodes.com/base/${BASE_NODE_API_KEY}`,
-        // blockNumber: 22180706 // Optional: Specify a block number to fork from
+        // blockNumber: 22578295 // Optional: Specify a block number to fork from
       }
     }
   },
