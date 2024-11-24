@@ -9,9 +9,9 @@ contract RunArbitrageScript is Script {
     Arbitrage public arbitrage;
     address constant DEPLOYED_CONTRACT = 0x7A8aB0187eB080b66919f8166e0e91EB16667557;
     address constant WETH = 0x4200000000000000000000000000000000000006;
-    address constant USDC = 0x532f27101965dd16442E59d40670FaF5eBB142E4;
-    address constant PANCAKE_POOL = 0x404E927b203375779a6aBD52A2049cE0ADf6609B;
-    address constant UNI_V2_POOL = 0x75CC10fdcEa4b7D13c115ABB08240ac9c9Be6f2f;
+    address constant USDC = 0xB1a03EdA10342529bBF8EB700a06C60441fEf25d;
+    address constant PANCAKE_POOL = 0x17A3Ad8c74c4947005aFEDa9965305ae2EB2518a;
+    address constant UNI_V2_POOL = 0xC16F5d5C0a2C0784EfaFEDf28B934a9F0bA21CD7;
     uint256 constant MIN_PRIORITY_FEE = 3 gwei;
 
     function run() external {
@@ -33,17 +33,17 @@ contract RunArbitrageScript is Script {
         path[2] = WETH;
 
         uint8[] memory exchRoute = new uint8[](2);
-        exchRoute[0] = 0;
-        exchRoute[1] = 2;
+        exchRoute[0] = 1;
+        exchRoute[1] = 0;
 
         address[] memory pools = new address[](2);
-        pools[0] = PANCAKE_POOL;
-        pools[1] = UNI_V2_POOL;
+        pools[0] = UNI_V2_POOL;
+        pools[1] = PANCAKE_POOL;
 
         bytes32 salt = bytes32(uint256(block.timestamp));
         bytes32 commitment = keccak256(abi.encode(
             WETH,
-            1.8 ether,
+            0.01 ether,
             path,
             exchRoute,
             pools,
@@ -58,7 +58,7 @@ contract RunArbitrageScript is Script {
 
         arbitrage.getFlashloanWithSubmarine(
             WETH,
-            1.8 ether,
+            0.01 ether,
             path,
             exchRoute,
             pools,
