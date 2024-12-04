@@ -17,15 +17,16 @@ contract P3Swap {
        
         IPancakeV3Pool pool = IPancakeV3Pool(poolAddress);
         bool zeroForOne = tokenIn == pool.token0();
-        address tokenOut = zeroForOne ? pool.token1() : pool.token0();
 
         (uint160 sqrtPriceX96, , , , , , ) = pool.slot0();
         // Safe version using checked math
         uint160 sqrtPriceLimitX96 = zeroForOne 
-        ? uint160((uint256(sqrtPriceX96) * 9975) / 10000)
-        : uint160((uint256(sqrtPriceX96) * 10025) / 10000);
+        ? uint160((uint256(sqrtPriceX96) * 99) / 100)   // Price can go up by 0.5%
+        : uint160((uint256(sqrtPriceX96) * 101) / 100); // Price can go down by 0.5%
 
-        bytes memory callbackData = abi.encode(tokenIn, tokenOut, amountIn);
+        // uint160 sqrtPriceLimitX96 = zeroForOne ? type(uint160).min : type(uint160).max;
+        
+        bytes memory callbackData = abi.encode(tokenIn, zeroForOne ? pool.token1() : pool.token0(), amountIn);
 
         (int256 amount0, int256 amount1) = pool.swap(
             recipient,

@@ -7,11 +7,11 @@ import "@balancer-labs/v2-interfaces/contracts/solidity-utils/openzeppelin/IERC2
 
 contract RunArbitrageScript is Script {
     Arbitrage public arbitrage;
-    address constant DEPLOYED_CONTRACT = 0x7A8aB0187eB080b66919f8166e0e91EB16667557;
+    address constant DEPLOYED_CONTRACT = 0x82B2c0D9AdbA9e1058a6C7de5987C979CCEA40e7;
     address constant WETH = 0x4200000000000000000000000000000000000006;
-    address constant USDC = 0xB1a03EdA10342529bBF8EB700a06C60441fEf25d;
-    address constant PANCAKE_POOL = 0x17A3Ad8c74c4947005aFEDa9965305ae2EB2518a;
-    address constant UNI_V2_POOL = 0xC16F5d5C0a2C0784EfaFEDf28B934a9F0bA21CD7;
+    address constant USDC = 0x0d97F261b1e88845184f678e2d1e7a98D9FD38dE;
+    address constant PANCAKE_POOL = 0xE745a591970e0Fa981204cf525E170a2B9e4fb93;
+    address constant UNI_V2_POOL = 0xF65BB528cED09008603509c3fDa43e1cCfdDF935;
     uint256 constant MIN_PRIORITY_FEE = 3 gwei;
 
     function run() external {
@@ -37,13 +37,13 @@ contract RunArbitrageScript is Script {
         exchRoute[1] = 0;
 
         address[] memory pools = new address[](2);
-        pools[0] = UNI_V2_POOL;
-        pools[1] = PANCAKE_POOL;
+        pools[0] = PANCAKE_POOL;
+        pools[1] = UNI_V2_POOL;
 
         bytes32 salt = bytes32(uint256(block.timestamp));
         bytes32 commitment = keccak256(abi.encode(
             WETH,
-            0.01 ether,
+            0.047728872 ether,
             path,
             exchRoute,
             pools,
@@ -58,7 +58,7 @@ contract RunArbitrageScript is Script {
 
         arbitrage.getFlashloanWithSubmarine(
             WETH,
-            0.01 ether,
+            0.047728872 ether,
             path,
             exchRoute,
             pools,
