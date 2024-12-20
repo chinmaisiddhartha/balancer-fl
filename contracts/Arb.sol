@@ -191,12 +191,13 @@ contract Arbitrage is IFlashLoanRecipient, V2Swap, V3Swap, P3Swap, CLSwap {
         address currentToken = userData.flashToken;
         
         uint256 routeLength = userData.exchRoute.length;
-        for (uint i = 0; i < routeLength; i++) {
+        for (uint i = 0; i < routeLength;) {
             console.log("Executing arbitrage on exchange: ", userData.exchRoute[i]);
             (uint256 amountOut, address tokenOut) = placeSwap(userData.path, currentAmount, userData.exchRoute[i], i, userData.pools[i]);
             console.log("Swap completed. Amount in: ", currentAmount, " Amount out: ", amountOut);
             currentAmount = amountOut;
             currentToken = tokenOut;
+            unchecked { ++i;}
         }
 
         console.log("Final amount: ", currentAmount, " Flash loan amount: ", flashAmount);
@@ -213,11 +214,10 @@ contract Arbitrage is IFlashLoanRecipient, V2Swap, V3Swap, P3Swap, CLSwap {
     }
 
 
-    function placeSwap(address[] memory _tokenPath, uint256 _amountIn, uint8 _route, uint256 swapIndex, address pool) private returns(uint256, address) {
+    function placeSwap(address[] memory _tokenPath, uint256 _amountIn, uint8 _route, uint256 swapIndex, address pool) private returns(uint256 amountOut, address) {
         console.log("Placing swap on exchange: ", _route);
         emit SwapStarted(_route, _amountIn, _tokenPath[swapIndex], _tokenPath[swapIndex + 1], pool);
     
-        uint256 amountOut;
         uint256 minAmountOut;
         address tokenOut = _tokenPath[swapIndex + 1];
 
@@ -310,7 +310,7 @@ contract Arbitrage is IFlashLoanRecipient, V2Swap, V3Swap, P3Swap, CLSwap {
         uint256 expectedOut = estimateV3Output(sqrtPriceX96, amountIn, zeroForOne);
 
         // Apply slippage
-        uint256 amountOutMin = (expectedOut * 9956) / 10000; // 0.44% slippage tolerance
+        uint256 amountOutMin = (expectedOut * 95) / 100; // 0.44% slippage tolerance
         console.log("Uni V3 expected amount Out:", expectedOut);
         console.log("Uni V3 amount out min:", amountOutMin);
         return amountOutMin;
@@ -328,7 +328,7 @@ contract Arbitrage is IFlashLoanRecipient, V2Swap, V3Swap, P3Swap, CLSwap {
         uint256 expectedOut = estimateV3Output(sqrtPriceX96, amountIn, zeroForOne);
 
         // Apply slippage
-        uint256 amountOutMin = (expectedOut * 9956) / 10000; // 0.33% slippage tolerance
+        uint256 amountOutMin = (expectedOut * 95) / 100; // 0.33% slippage tolerance
         console.log("Pancake V3 expected amount Out:", expectedOut);
         console.log("Pancake V3 amount out min:", amountOutMin);
         return amountOutMin;
@@ -345,7 +345,7 @@ contract Arbitrage is IFlashLoanRecipient, V2Swap, V3Swap, P3Swap, CLSwap {
         uint256 expectedOut = estimateV3Output(sqrtPriceX96, amountIn, zeroForOne);
 
         // Apply slippage
-        uint256 amountOutMin = (expectedOut * 9956) / 10000; // 0.33% slippage tolerance
+        uint256 amountOutMin = (expectedOut * 95) / 100; // 0.33% slippage tolerance
         console.log("CL Swap expected amount Out:", expectedOut);
         console.log("CL Swap amount out Minimum:", amountOutMin);
         return amountOutMin;

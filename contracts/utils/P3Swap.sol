@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import "@pancakeswap/v3-core/contracts/interfaces/IPancakeV3Pool.sol";
 import "@balancer-labs/v2-interfaces/contracts/solidity-utils/openzeppelin/IERC20.sol";
 import "./TransferHelper.sol";
+import "hardhat/console.sol";
 
 contract P3Swap {
 
@@ -37,7 +38,8 @@ contract P3Swap {
         );
         
         amountOut = uint256(-(zeroForOne ? amount1 : amount0));
-        require(amountOut >= amountOutMinimum, "Insufficient output amount");
+        console.log("pancake V3 Actual amountOut : ", amountOut);
+        require(amountOut >= amountOutMinimum, "slippage too high.. pancake V3");
 
     }
 

@@ -4,7 +4,7 @@ pragma solidity ^0.8.18;
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import "@balancer-labs/v2-interfaces/contracts/solidity-utils/openzeppelin/IERC20.sol";
 import "./TransferHelper.sol";
-
+import "hardhat/console.sol";
 
 contract V3Swap {
 
@@ -36,7 +36,8 @@ contract V3Swap {
             callbackData
         );
         amountOut = uint256(-(zeroForOne ? amount1 : amount0));
-        require(amountOut >= amountOutMinimum, "Insufficient output amount");
+        console.log("uniswap V3 Actual amountOut : ", amountOut);
+        require(amountOut >= amountOutMinimum,"slippage too high.. uniswap V3");
     
     }
 

@@ -2,7 +2,7 @@
 pragma solidity ^0.8.18;
 
 import "../lib/forge-std/src/Script.sol";
-import "../contracts/Arb.sol";
+import {Arbitrage} from  "../contracts/Arb.sol";
 import "@balancer-labs/v2-interfaces/contracts/solidity-utils/openzeppelin/IERC20.sol";
 
 contract RunArbitrageScript is Script {

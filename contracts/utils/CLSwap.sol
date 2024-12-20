@@ -4,6 +4,7 @@ pragma solidity ^0.8.18;
 import "@balancer-labs/v2-interfaces/contracts/solidity-utils/openzeppelin/IERC20.sol";
 import "./ICLPool.sol";
 import "./TransferHelper.sol";
+import "hardhat/console.sol";
 contract CLSwap {
 
     function swapCL(
@@ -37,7 +38,8 @@ contract CLSwap {
         );
 
         amountOut = uint256(-(zeroForOne ? amount1 : amount0));
-        require(amountOut >= amountOutMinimum, "Insufficient output amount");
+        console.log("CL Actual amountOut : ", amountOut);
+        require(amountOut >= amountOutMinimum, "Slippage too high.. CL");
     
     }
 
